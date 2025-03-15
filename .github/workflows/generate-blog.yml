@@ -37,7 +37,6 @@ jobs:
             -d '{
               "data": {
                 "Title": "$(cat generated_blog.json | jq -r '.title')",
-                "Content": "$(cat generated_blog.json | jq -r '.content')",
-                "PreviewImage": 1
+                "Content": "$(cat generated_blog.json | jq -r '.content')"
               }
             }'
