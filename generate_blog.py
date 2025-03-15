@@ -10,7 +10,7 @@ DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")
 def generate_text(prompt, max_tokens):
     headers = {
         "Authorization": f"Bearer {DEEPSEEK_API_KEY}",
-        "Content-Type: "application/json",
+        "Content-Type": "application/json",  # Fixed syntax
     }
     data = {
         "prompt": prompt,
@@ -24,7 +24,7 @@ def generate_text(prompt, max_tokens):
 
 # Generate title
 title_prompt = "Generate a catchy title for a blog post about the benefits of AI in SEO."
-title = generate_text(title_prompt, max_tokens=20)  # Adjust max_tokens as needed
+title = generate_text(title_prompt, max_tokens=20)
 
 # Generate content
 content_prompt = "Write a 500-word blog post about the benefits of AI in SEO."
