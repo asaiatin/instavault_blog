@@ -1,0 +1,36 @@
+name: Generate and Publish Blog
+on:
+  schedule:
+    - cron: '0 8 * * *'  # Runs daily at 8:00 AM UTC
+  workflow_dispatch:  # Allows manual triggering
+
+jobs:
+  generate-and-publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Install dependencies
+        run: |
+          pip install requests
+
+      - name: Generate blog post using DeepSeek API
+        env:
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+        run: |
+          python generate_blog.py
+
+      - name: Publish to Strapi
+        env:
+          STRAPI_API_KEY: ${{ secrets.STRAPI_API_KEY }}
+        run: |
+          curl -X POST https://your-strapi-instance.com/api/blogs \
+            -H "Authorization: Bearer $STRAPI_API_KEY" \
+            -H "Content-Type: application/json" \
+            -d @generated_blog.json
