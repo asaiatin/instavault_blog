@@ -19,18 +19,25 @@ jobs:
       - name: Install dependencies
         run: |
           pip install requests
+          sudo apt-get install jq  # Install jq for JSON parsing
 
       - name: Generate blog post using DeepSeek API
         env:
-          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}  # Use secret
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}  # Use GitHub Secret
         run: |
           python generate_blog.py
 
       - name: Publish to Strapi
         env:
-          STRAPI_API_KEY: ${{ secrets.STRAPI_API_KEY }}  # Use secret
+          STRAPI_API_KEY: ${{ secrets.STRAPI_API_KEY }}  # Use GitHub Secret
         run: |
-          curl -X POST https://your-strapi-instance.com/api/blogs \
-            -H "Authorization: Bearer $STRAPI_API_KEY" \
+          curl -X POST https://strapi.instavault.co/api/blogs \
             -H "Content-Type: application/json" \
-            -d @generated_blog.json
+            -H "Authorization: Bearer $STRAPI_API_KEY" \
+            -d '{
+              "data": {
+                "Title": "$(cat generated_blog.json | jq -r '.title')",
+                "Content": "$(cat generated_blog.json | jq -r '.content')",
+                "PreviewImage": 1
+              }
+            }'
