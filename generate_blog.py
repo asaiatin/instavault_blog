@@ -10,7 +10,7 @@ DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")
 def generate_text(prompt, max_tokens):
     headers = {
         "Authorization": f"Bearer {DEEPSEEK_API_KEY}",
-        "Content-Type": "application/json",
+        "Content-Type: "application/json",
     }
     data = {
         "prompt": prompt,
