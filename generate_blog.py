@@ -3,7 +3,7 @@ import requests
 import json
 
 # DeepSeek API endpoint and key
-DEEPSEEK_API_URL = "https://api.deepseek.com/v1/generate"
+DEEPSEEK_API_URL = "https://api.deepseek.com/chat/completions"
 DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")
 
 # Function to call DeepSeek API
