@@ -40,6 +40,21 @@ def generate_text(prompt, max_tokens):
     except requests.exceptions.RequestException as e:
         raise Exception(f"API request failed: {e}")
 
+#RICH TEXT
+def format_content_for_strapi(content):
+    return [
+        {
+            "type": "paragraph",
+            "children": [
+                {
+                    "type": "text",
+                    "text": content,
+                }
+            ]
+        }
+    ]
+
+
 # Function to publish to Strapi
 def publish_to_strapi(title, content):
     headers = {
@@ -49,7 +64,7 @@ def publish_to_strapi(title, content):
     data = {
         "data": {
             "Title": title,
-            "Content": content,
+            "Content": format_content_for_strapi(content),
         }
     }
     try:
