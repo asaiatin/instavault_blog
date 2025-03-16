@@ -26,112 +26,54 @@ def generate_text(prompt, max_tokens):
             },
             {"role": "user", "content": prompt},  # User prompt
         ],
-        "max_tokens": max_tokens,  # Limit response length
-        "stream": False,  # Disable streaming for simplicity
+        "max_tokens": max_tokens,
+        "stream": False,
     }
-    try:
-        print(f"Sending request to: {DEEPSEEK_API_URL}")  # Debugging
-        print(f"Request payload: {json.dumps(data, indent=2)}")  # Debugging
-        response = requests.post(DEEPSEEK_API_URL, headers=headers, json=data)
-        print(f"Response status code: {response.status_code}")  # Debugging
-        print(f"Response body: {response.text}")  # Debugging
-        response.raise_for_status()  # Raise an error for bad status codes
-        return response.json()["choices"][0]["message"]["content"].strip()  # Extract response
-    except requests.exceptions.RequestException as e:
-        raise Exception(f"API request failed: {e}")
 
-# Function to format content for Strapi's Rich Text (blocks)
-def format_content_for_strapi(content):
-    blocks = []
-    paragraphs = content.split("\n\n")  # Split into paragraphs
+    response = requests.post(DEEPSEEK_API_URL, headers=headers, json=data)
+    if response.status_code == 200:
+        return response.json()["choices"][0]["message"]["content"].strip()
+    else:
+        print(f"Error generating text: {response.text}")
+        return None
 
-    for paragraph in paragraphs:
-        if paragraph.strip():  # Skip empty paragraphs
-            # Handle headings (lines starting with #)
-            if paragraph.startswith("# "):
-                blocks.append({
-                    "type": "heading",
-                    "level": 1,  # H1
-                    "children": [
-                        {
-                            "type": "text",
-                            "text": paragraph.replace("# ", "").strip(),
-                        }
-                    ]
-                })
-            elif paragraph.startswith("## "):
-                blocks.append({
-                    "type": "heading",
-                    "level": 2,  # H2
-                    "children": [
-                        {
-                            "type": "text",
-                            "text": paragraph.replace("## ", "").strip(),
-                        }
-                    ]
-                })
-            else:
-                # Handle bold text (wrapped in **)
-                children = []
-                parts = paragraph.split("**")
-                for i, part in enumerate(parts):
-                    if i % 2 == 0:
-                        children.append({
-                            "type": "text",
-                            "text": part.strip(),
-                        })
-                    else:
-                        children.append({
-                            "type": "text",
-                            "text": part.strip(),
-                            "bold": True,
-                        })
-                blocks.append({
-                    "type": "paragraph",
-                    "children": children,
-                })
-
-    return blocks
-
-# Function to publish to Strapi
-def publish_to_strapi(title, content):
+# Function to post to Strapi
+def post_to_strapi(title, content):
     headers = {
         "Authorization": f"Bearer {STRAPI_API_KEY}",
         "Content-Type": "application/json",
     }
+
+    formatted_content = [
+        {"type": "heading", "level": 1, "children": [{"type": "text", "text": title}]},
+        {"type": "paragraph", "children": [{"type": "text", "text": content}]},
+    ]
+    
     data = {
         "data": {
             "Title": title,
-            "Content": format_content_for_strapi(content),  # Format content for Strapi
+            "Content": formatted_content,
+            "PublishedAt": datetime.datetime.utcnow().isoformat()
         }
     }
-    try:
-        print(f"Sending request to: {STRAPI_API_URL}")  # Debugging
-        print(f"Request payload: {json.dumps(data, indent=2)}")  # Debugging
-        response = requests.post(STRAPI_API_URL, headers=headers, json=data)
-        print(f"Response status code: {response.status_code}")  # Debugging
-        print(f"Response body: {response.text}")  # Debugging
-        response.raise_for_status()  # Raise an error for bad status codes
-        print("Blog published to Strapi successfully!")
-    except requests.exceptions.RequestException as e:
-        raise Exception(f"Failed to publish to Strapi: {e}")
+    
+    response = requests.post(STRAPI_API_URL, headers=headers, json=data)
+    if response.status_code == 201:
+        print("Blog published successfully!")
+    else:
+        print(f"Error posting to Strapi: {response.text}")
 
-# Generate blog post
-try:
+if __name__ == "__main__":
     # Generate title
     title_prompt = "Generate a catchy title for a blog post about how to organize saved Instagram posts using InstaVault."
-    title = generate_text(title_prompt, max_tokens=20)
-
-    # Generate content
-    content_prompt = "Write a 500-word blog post about how to organize saved Instagram posts using InstaVault. Focus on actionable tips and examples."
-    content = generate_text(content_prompt, max_tokens=500)
-
-    # Print generated content for debugging
-    print("Generated Content:")
-    print(content)
-
-    # Publish to Strapi
-    publish_to_strapi(title, content)
-
-except Exception as e:
-    print(f"Error: {e}")
+    title = generate_text(title_prompt, 20)
+    
+    if title:
+        title = title.strip('"')  # Fix quote issue
+        
+        # Generate content
+        content_prompt = "Write a detailed, well-formatted blog post about how to organize saved Instagram posts using InstaVault. Include step-by-step instructions, actionable tips, and proper HTML/Markdown formatting."
+        content = generate_text(content_prompt, 500)
+        
+        if content:
+            post_to_strapi(title, content)
