@@ -81,6 +81,10 @@ try:
     with open("generated_blog.json", "w") as f:
         json.dump(blog_data, f)
 
+    # Print JSON content to logs
+    print("Generated JSON Content:")
+    print(json.dumps(blog_data, indent=4))
+
     print("Blog title and content generated successfully!")
 
     # Publish to Strapi
