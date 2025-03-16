@@ -40,20 +40,58 @@ def generate_text(prompt, max_tokens):
     except requests.exceptions.RequestException as e:
         raise Exception(f"API request failed: {e}")
 
-#RICH TEXT
+# Function to format content for Strapi's Rich Text (blocks)
 def format_content_for_strapi(content):
-    return [
-        {
-            "type": "paragraph",
-            "children": [
-                {
-                    "type": "text",
-                    "text": content,
-                }
-            ]
-        }
-    ]
+    blocks = []
+    paragraphs = content.split("\n\n")  # Split into paragraphs
 
+    for paragraph in paragraphs:
+        if paragraph.strip():  # Skip empty paragraphs
+            # Handle headings (lines starting with #)
+            if paragraph.startswith("# "):
+                blocks.append({
+                    "type": "heading",
+                    "level": 1,  # H1
+                    "children": [
+                        {
+                            "type": "text",
+                            "text": paragraph.replace("# ", "").strip(),
+                        }
+                    ]
+                })
+            elif paragraph.startswith("## "):
+                blocks.append({
+                    "type": "heading",
+                    "level": 2,  # H2
+                    "children": [
+                        {
+                            "type": "text",
+                            "text": paragraph.replace("## ", "").strip(),
+                        }
+                    ]
+                })
+            else:
+                # Handle bold text (wrapped in **)
+                children = []
+                parts = paragraph.split("**")
+                for i, part in enumerate(parts):
+                    if i % 2 == 0:
+                        children.append({
+                            "type": "text",
+                            "text": part.strip(),
+                        })
+                    else:
+                        children.append({
+                            "type": "text",
+                            "text": part.strip(),
+                            "bold": True,
+                        })
+                blocks.append({
+                    "type": "paragraph",
+                    "children": children,
+                })
+
+    return blocks
 
 # Function to publish to Strapi
 def publish_to_strapi(title, content):
@@ -64,7 +102,7 @@ def publish_to_strapi(title, content):
     data = {
         "data": {
             "Title": title,
-            "Content": format_content_for_strapi(content),
+            "Content": format_content_for_strapi(content),  # Format content for Strapi
         }
     }
     try:
@@ -88,19 +126,9 @@ try:
     content_prompt = "Write a 500-word blog post about how to organize saved Instagram posts using InstaVault. Focus on actionable tips and examples."
     content = generate_text(content_prompt, max_tokens=500)
 
-    # Save title and content to a JSON file
-    blog_data = {
-        "title": title,
-        "content": content,
-    }
-    with open("generated_blog.json", "w") as f:
-        json.dump(blog_data, f)
-
-    # Print JSON content to logs
-    print("Generated JSON Content:")
-    print(json.dumps(blog_data, indent=4))
-
-    print("Blog title and content generated successfully!")
+    # Print generated content for debugging
+    print("Generated Content:")
+    print(content)
 
     # Publish to Strapi
     publish_to_strapi(title, content)
